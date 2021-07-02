@@ -1,0 +1,133 @@
+step1:create a folder app/
+named: admin
+cmd> ng generate module admin --flat --routing
+where "--flat inside that folder it will not create the another extra folder"
+
+step2 : create 2 components seperately with compoents , routing and module inside it
+cmd>ng generate module module_name --flat --routing
+cmd>ng g c component_name --flat
+
+step3 for generating the main app routing 
+cmd>ng g m app-routing --flat --module=app
+
+step 4: set the routing in both module :
+like this:
+const routes: Routes = [
+  { path:'',
+  component:UserComponent,
+  children:[
+    {
+      path:'login',component:LoginComponent,
+    },
+    {
+      path:'register',component:RegisterComponent
+    }
+  ] }
+];
+@NgModule({
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule]
+})
+
+step5:goto app-routing.module:
+const router:Routes =[
+  {
+    path:'admin',
+    component:AdminComponent,
+    loadChildren:() => import('./core/common-modules/admin/admin.module').then(m=>m.AdminModule)
+  },
+  {
+    path:'user',
+    component:UserComponent,
+    loadChildren:() => import('./core/common-modules/user/user.module').then(m => m.UserModule)
+  }
+]
+
+@NgModule({
+  imports: [
+    RouterModule.forRoot(router)
+  ],
+  exports:[RouterModule]
+})
+
+
+
+
+Update  api:
+step1: create a table inside that create a column for update button.
+step2: after clicking the button it should go to the new page
+
+3:
+<tbody>
+<tr ngFor="let item of items">
+<td>{{item.id}}>
+<td>{{item.name}}>
+<td>{{item.password}}>
+<td><a routerLink="/update/{{item.id}}">update</a>
+
+4:you nee to update the id in routing path too.
+{
+  path:'update/:id',component:TableComponent //jaha par table hai that one should take
+}
+
+5:In common service api call
+  getCurrentData(id){
+    return this.http.get(`${this.apiUrl}/resto/${id}`)
+  }
+
+  updateResto(id,data){
+    return this.http.put(`${this.apiUrl}/resto/${id}`,data);
+  }
+6:In routing
+7.implement these two front end api in seperate component called UpdateComponent:
+
+ constructor(private commonService:CommonService,private fb:FormBuilder,private activatedRoute:ActivatedRoute) { }
+
+  ngOnInit(): void {
+    this.commonService.getCurrentData(this.activatedRoute.snapshot.params.id)
+      .subscribe(
+        (result) =>{ 
+          this.UpdateRestoForm = this.fb.group({
+            id:result['id'],
+            name:result['name'],
+            location:result['location'],
+            rating:result['rating'],
+            contact:result['contact']
+          })
+        }
+      )
+  }
+
+
+    <div class="text-center">
+        <button type="submit" (click)="updateResto()" class="btn btn-primary">Update</button>
+    </div>
+ updateResto(){
+    this.commonService.updateResto(this.activatedRoute.snapshot.params.id,this.UpdateRestoForm.getRawValue())
+      .subscribe((result)=>{
+        console.log(result);
+      })
+
+  }
+
+
+
+  delete api:
+  1.in html
+     <a><span><i class="fas fa-trash-alt" (click)="deleteResto(resto.id)"></i></span></a>
+    2.in logic:
+     deleteResto(id){
+    this.commonService.deleteResto(id)
+      .subscribe(()=>{
+        window.location.reload();
+    })
+  }
+
+  3.api call:
+    deleteResto(id){
+    return this.http.delete(`${this.apiUrl}/resto/${id}`)
+  }
+
+
+
+
